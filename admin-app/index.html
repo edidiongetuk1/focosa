@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="api-base" content="https://focosa.onrender.com/api" />
+  <title>FOCOSA Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f5f5f0;
+      --sidebar-bg: #0f1a14;
+      --sidebar-text: rgba(255,255,255,0.7);
+      --sidebar-active: #1a7a45;
+      --sidebar-hover: rgba(255,255,255,0.07);
+      --card: #ffffff;
+      --border: #e8e8e3;
+      --primary: #1a7a45;
+      --primary-light: #e8f5ee;
+      --text: #1a1a16;
+      --muted: #888880;
+      --destructive: #dc3545;
+      --success: #16a34a;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; font-size: 14px; }
+
+    .sidebar { width: 220px; background: var(--sidebar-bg); display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.25s ease; overflow: hidden; }
+    .sidebar.collapsed { width: 56px; }
+    .sidebar-header { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; min-height: 64px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 15px; flex-shrink: 0; }
+    .logo-text h2 { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 0.05em; }
+    .logo-text p { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+    .sidebar-content { flex: 1; padding: 12px 8px; overflow-y: auto; }
+    .sidebar-group-label { font-size: 9.5px; font-weight: 600; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 8px 4px; white-space: nowrap; overflow: hidden; }
+    .sidebar.collapsed .sidebar-group-label { opacity: 0; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; color: var(--sidebar-text); cursor: pointer; transition: all 0.15s; white-space: nowrap; margin-bottom: 1px; font-size: 13.5px; font-weight: 500; }
+    .nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+    .nav-item.active { background: var(--primary); color: #fff; }
+    .nav-item svg { flex-shrink: 0; width: 16px; height: 16px; }
+    .nav-label { overflow: hidden; }
+    .sidebar-footer { padding: 8px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .logout-btn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; color: #f87171; cursor: pointer; transition: all 0.15s; font-size: 13.5px; font-weight: 500; width: 100%; background: none; border: none; font-family: inherit; }
+    .logout-btn:hover { background: rgba(220,53,69,0.12); }
+
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 56px; background: var(--card); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .page-title { font-size: 14px; font-weight: 600; }
+    .page-subtitle { font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .icon-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border); background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all 0.15s; position: relative; }
+    .icon-btn:hover { background: var(--bg); color: var(--text); }
+    .notif-dot { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: var(--destructive); border-radius: 50%; border: 1.5px solid var(--card); }
+    .avatar { width: 34px; height: 34px; border-radius: 8px; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+    .stat-header { display: flex; align-items: flex-start; justify-content: space-between; }
+    .stat-icon { width: 38px; height: 38px; border-radius: 9px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--primary); }
+    .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+    .stat-value { font-size: 24px; font-weight: 700; margin-top: 6px; }
+    .stat-change { font-size: 11px; font-weight: 500; margin-top: 3px; color: var(--success); }
+    .stat-change.neutral { color: var(--muted); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 13.5px; font-weight: 600; }
+    .card-body { padding: 16px 20px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { border-bottom: 1px solid var(--border); }
+    th { text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(0,0,0,0.01); }
+    .td-muted { color: var(--muted); }
+    .td-bold { font-weight: 600; }
+    .td-actions { text-align: right; }
+    .td-actions > div { display: flex; justify-content: flex-end; gap: 4px; }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef3c7; color: #92400e; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #155c34; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 7px; }
+    .btn-ghost { background: transparent; color: var(--muted); }
+    .btn-ghost:hover { background: var(--bg); color: var(--text); }
+    .btn-ghost-red { background: transparent; color: var(--destructive); }
+    .btn-ghost-red:hover { background: #fee2e2; }
+    .btn-ghost-green { background: transparent; color: var(--success); }
+    .btn-ghost-green:hover { background: #dcfce7; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { background: var(--bg); }
+    .btn-icon { padding: 5px; border-radius: 7px; }
+
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .activity-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; }
+    .activity-info { flex: 1; margin-left: 12px; }
+    .activity-action { font-size: 13px; font-weight: 500; }
+    .activity-user { font-size: 11px; color: var(--muted); }
+    .activity-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    .list-item { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 12px; border-radius: 8px; background: var(--bg); margin-bottom: 8px; gap: 10px; }
+    .list-item-title { font-size: 13px; font-weight: 500; }
+    .list-item-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .settings-card { max-width: 620px; }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 12.5px; font-weight: 500; margin-bottom: 5px; display: block; }
+    .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; font-family: inherit; background: var(--card); outline: none; transition: border-color 0.15s; }
+    .form-input:focus { border-color: var(--primary); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 13px; font-weight: 500; }
+    .toggle-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .toggle { width: 38px; height: 22px; border-radius: 11px; background: #d1d5db; position: relative; cursor: pointer; transition: background 0.2s; border: none; flex-shrink: 0; }
+    .toggle.on { background: var(--primary); }
+    .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .toggle.on::after { transform: translateX(16px); }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--card); border-radius: 14px; padding: 24px; width: 480px; max-width: 94vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); animation: modal-in 0.2s ease; }
+    @keyframes modal-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close { background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 6px; }
+    .modal-close:hover { background: var(--bg); color: var(--text); }
+    .modal-footer { margin-top: 18px; display: flex; gap: 8px; justify-content: flex-end; }
+    .select-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; font-family: inherit; background: var(--card); outline: none; }
+    .select-input:focus { border-color: var(--primary); }
+    .textarea-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13.5px; font-family: inherit; resize: vertical; background: var(--card); outline: none; min-height: 80px; }
+    .textarea-input:focus { border-color: var(--primary); }
+
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+    .toast { background: var(--text); color: #fff; padding: 10px 16px; border-radius: 9px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 16px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 8px; animation: toast-in 0.25s ease; }
+    @keyframes toast-in { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--destructive); }
+
+    .api-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 20px; background: #fee2e2; color: #991b1b; }
+    .api-status.connected { background: #dcfce7; color: #166534; }
+    .api-status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .loading { color: var(--muted); font-size: 13px; padding: 24px; text-align: center; }
+    .mb-4 { margin-bottom: 16px; }
+    .mb-6 { margin-bottom: 24px; }
+    .space-y > * + * { margin-top: 16px; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+    /* ============================================================
+       Mobile responsiveness overrides (admin)
+       ============================================================ */
+    html, body { -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+    img { max-width: 100%; height: auto; }
+    .main-content { padding-left: clamp(20px, 4vw, 40px) !important; padding-right: clamp(20px, 4vw, 40px) !important; }
+
+    @media (max-width: 1024px) {
+      .main-content { padding: 16px; }
+      .stats-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
+      .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .page-header .actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+      .page-header .actions .btn { flex: 1 1 auto; }
+    }
+
+    @media (max-width: 768px) {
+      .main-content { padding: 12px; }
+      h1, .page-title { font-size: clamp(1.4rem, 5vw, 1.9rem) !important; }
+      input, select, textarea { font-size: 16px; width: 100%; }
+      .form-row, .form-grid { display: flex !important; flex-direction: column; gap: 10px; }
+      .modal, .dialog { max-width: min(560px, calc(100vw - 24px)) !important; max-height: 90dvh; overflow-y: auto; }
+      /* Tables: allow horizontal scroll */
+      .table-wrap, .table-responsive, .data-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 560px; }
+      .btn { min-height: 40px; }
+      .icon-btn { min-width: 40px; min-height: 40px; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr !important; }
+      .page-header .actions { flex-direction: column; }
+      .page-header .actions .btn { width: 100%; }
+      .card { padding: 12px !important; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-icon">F</div>
+    <div class="logo-text"><h2>FOCOSA</h2><p>Admin Panel</p></div>
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-group-label">Main</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span class="nav-label">Dashboard</span></div>
+    <div class="nav-item" onclick="navigate('announcements',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 22-7z"/></svg><span class="nav-label">Announcements</span></div>
+    <div class="nav-item" onclick="navigate('events',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-label">Events</span></div>
+    <div class="nav-item" onclick="navigate('resources',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span class="nav-label">Resources</span></div>
+    <div class="nav-item" onclick="navigate('departments',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="nav-label">Departments</span></div>
+    <div class="nav-item" onclick="navigate('marketplace',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg><span class="nav-label">Marketplace</span></div>
+    <div class="nav-item" onclick="navigate('verifications',this)" id="nav-verifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span class="nav-label">Verifications</span><span id="verif-badge" style="display:none;margin-left:auto;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;"></span></div>
+    <div class="sidebar-group-label" style="margin-top:12px">Management</div>
+    <div class="nav-item" onclick="navigate('users',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">Users</span></div>
+    <div class="nav-item" onclick="navigate('lecturers',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg><span class="nav-label">Lecturers</span></div>
+    <div class="nav-item" onclick="navigate('settings',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span class="nav-label">Settings</span></div>
+  </div>
+  <div class="sidebar-footer">
+    <button class="logout-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="nav-label">Logout</span></button>
+  </div>
+</aside>
+
+<div class="main-wrapper">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" onclick="toggleSidebar()" style="border:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div><div class="page-title" id="topbar-title">Dashboard</div><div class="page-subtitle" id="topbar-subtitle">Overview of FOCOSA Hub</div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="api-status" id="api-status"><span class="api-status-dot"></span><span id="api-status-text">API Disconnected</span></div>
+      <button class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot"></span></button>
+      <div class="avatar">A</div>
+    </div>
+  </header>
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Total Users</div><div class="stat-value" id="stat-users">—</div><div class="stat-change neutral" id="sc-users">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div></div>
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Resources</div><div class="stat-value" id="stat-resources">—</div><div class="stat-change neutral" id="sc-resources">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div></div>
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Events</div><div class="stat-value" id="stat-events">—</div><div class="stat-change neutral" id="sc-events">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></div>
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Announcements</div><div class="stat-value" id="stat-ann">—</div><div class="stat-change neutral" id="sc-ann">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 22-7z"/></svg></div></div></div>
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Marketplace</div><div class="stat-value" id="stat-listings">—</div><div class="stat-change neutral" id="sc-listings">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></div></div></div>
+        <div class="stat-card"><div class="stat-header"><div><div class="stat-label">Departments</div><div class="stat-value" id="stat-depts">—</div><div class="stat-change neutral" id="sc-depts">Loading</div></div><div class="stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div></div></div>
+      </div>
+      <div class="grid-2 mb-6">
+        <div class="card"><div class="card-header"><span class="card-title">Recent Announcements</span></div><div class="card-body" id="dash-announcements"><div class="loading">Loading…</div></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Upcoming Events</span></div><div class="card-body" id="dash-events"><div class="loading">Loading…</div></div></div>
+      </div>
+      <div class="card"><div class="card-header"><span class="card-title">Recent Activity</span></div><div class="card-body" id="dash-activity"></div></div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div id="page-announcements" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Announcements</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-announcement')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Announcement</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Title</th><th>Type</th><th>Date</th><th>Status</th><th class="td-actions">Actions</th></tr></thead><tbody id="announcements-table"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- EVENTS -->
+    <div id="page-events" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Events</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-event')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New Event</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Title</th><th>Date</th><th>Location</th><th>Status</th><th class="td-actions">Actions</th></tr></thead><tbody id="events-table"><tr><td colspan="5" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- RESOURCES -->
+    <div id="page-resources" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Resources</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-resource')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Upload Resource</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Title</th><th>Department</th><th>Level</th><th>Downloads</th><th>Date</th><th class="td-actions">Actions</th></tr></thead><tbody id="resources-table"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- DEPARTMENTS -->
+    <div id="page-departments" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Departments</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-dept')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Department</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Department</th><th>Code</th><th>HOD</th><th>Students</th><th>Courses</th><th class="td-actions">Actions</th></tr></thead><tbody id="departments-table"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- MARKETPLACE -->
+    <div id="page-marketplace" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Listings</span></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Item</th><th>Seller</th><th>Price</th><th>Category</th><th>Date</th><th>Status</th><th class="td-actions">Actions</th></tr></thead><tbody id="marketplace-table"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- VERIFICATIONS -->
+    <div id="page-verifications" class="page">
+      <div class="section-header mb-4">
+        <span class="section-title">Student Verification Requests</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="verif-filter" class="select-input" style="width:140px;font-size:13px;" onchange="loadVerifications()">
+            <option value="">All Requests</option>
+            <option value="pending" selected>Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Student</th><th>Email</th><th>Matric No.</th><th>Department</th><th>Level</th><th>ID Card</th><th>Submitted</th><th>Status</th><th class="td-actions">Actions</th>
+            </tr></thead>
+            <tbody id="verifications-table"><tr><td colspan="9" class="loading">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div id="page-users" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Users</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-user')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add User</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Level</th><th>Role</th><th>Joined</th><th class="td-actions">Actions</th></tr></thead><tbody id="users-table"><tr><td colspan="7" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- LECTURERS -->
+    <div id="page-lecturers" class="page">
+      <div class="section-header mb-4"><span class="section-title">All Lecturers</span><button class="btn btn-primary btn-sm" onclick="openModal('modal-add-lecturer')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Lecturer</button></div>
+      <div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Department</th><th>Email</th><th>Position</th><th>Office</th><th class="td-actions">Actions</th></tr></thead><tbody id="lecturers-table"><tr><td colspan="6" class="loading">Loading…</td></tr></tbody></table></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="page-settings" class="page">
+      <div class="space-y settings-card">
+        <div class="card"><div class="card-header"><span class="card-title">General Settings</span></div><div class="card-body"><div class="form-group"><label class="form-label">Site Name</label><input class="form-input" value="FOCOSA Hub" /></div><div class="form-group"><label class="form-label">Site Description</label><input class="form-input" value="Faculty of Computing Students Association" /></div></div></div>
+        <div class="card"><div class="card-header"><span class="card-title">Notifications & Features</span></div><div class="card-body"><div class="toggle-row"><div><div class="toggle-label">Email Notifications</div><div class="toggle-sub">Receive email for new registrations</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div><div class="toggle-row"><div><div class="toggle-label">Marketplace Moderation</div><div class="toggle-sub">Require approval for new listings</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div><div class="toggle-row"><div><div class="toggle-label">Maintenance Mode</div><div class="toggle-sub">Temporarily disable public access</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div></div></div>
+        <div><button class="btn btn-primary" onclick="showToast('Settings saved','success')">Save Changes</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-add-announcement" onclick="closeModal(event,'modal-add-announcement')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">New Announcement</span><button class="modal-close" onclick="closeModal(null,'modal-add-announcement')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="ann-title" placeholder="Announcement title" /></div>
+    <div class="form-group"><label class="form-label">Content *</label><textarea class="textarea-input" id="ann-content" placeholder="Content…"></textarea></div>
+    <div class="form-group"><label class="form-label">Type</label><select class="select-input" id="ann-type"><option>General</option><option>Important</option><option>Event</option><option>Resources</option></select></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-announcement')">Cancel</button><button class="btn btn-primary" onclick="submitAnnouncement()">Publish</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-event" onclick="closeModal(event,'modal-add-event')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">New Event</span><button class="modal-close" onclick="closeModal(null,'modal-add-event')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="evt-title" placeholder="Event title" /></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="textarea-input" id="evt-desc" placeholder="Description…"></textarea></div>
+    <div class="form-group"><label class="form-label">Date *</label><input class="form-input" id="evt-date" type="date" /></div>
+    <div class="form-group"><label class="form-label">Location *</label><input class="form-input" id="evt-location" placeholder="e.g. Faculty Auditorium" /></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-event')">Cancel</button><button class="btn btn-primary" onclick="submitEvent()">Create Event</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-resource" onclick="closeModal(event,'modal-add-resource')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">Upload Resource</span><button class="modal-close" onclick="closeModal(null,'modal-add-resource')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="res-title" placeholder="Resource title" /></div>
+    <div class="form-group"><label class="form-label">Department</label><select class="select-input" id="res-dept"><option>Computer Science</option><option>Information Technology</option><option>Cybersecurity</option><option>Software Engineering</option></select></div>
+    <div class="form-group"><label class="form-label">Level</label><select class="select-input" id="res-level"><option>100L</option><option>200L</option><option>300L</option><option>400L</option><option>500L</option></select></div>
+    <div class="form-group"><label class="form-label">URL / Link</label><input class="form-input" id="res-url" placeholder="https://…" /></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-resource')">Cancel</button><button class="btn btn-primary" onclick="submitResource()">Upload</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-dept" onclick="closeModal(event,'modal-add-dept')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">Add Department</span><button class="modal-close" onclick="closeModal(null,'modal-add-dept')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="dept-name" placeholder="e.g. Computer Science" /></div>
+    <div class="form-group"><label class="form-label">Code *</label><input class="form-input" id="dept-code" placeholder="e.g. CSC" /></div>
+    <div class="form-group"><label class="form-label">HOD</label><input class="form-input" id="dept-hod" placeholder="Head of Department" /></div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="textarea-input" id="dept-desc" placeholder="Description…"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-dept')">Cancel</button><button class="btn btn-primary" onclick="submitDepartment()">Add Department</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-user" onclick="closeModal(event,'modal-add-user')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">Add User</span><button class="modal-close" onclick="closeModal(null,'modal-add-user')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="user-name" /></div>
+    <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="user-email" type="email" /></div>
+    <div class="form-group"><label class="form-label">Matric Number</label><input class="form-input" id="user-matric" placeholder="CSC/2022/001" /></div>
+    <div class="form-group"><label class="form-label">Department</label><select class="select-input" id="user-dept"><option>Computer Science</option><option>Information Technology</option><option>Cybersecurity</option><option>Software Engineering</option></select></div>
+    <div class="form-group"><label class="form-label">Level</label><select class="select-input" id="user-level"><option>100L</option><option>200L</option><option>300L</option><option>400L</option><option>500L</option></select></div>
+    <div class="form-group"><label class="form-label">Role</label><select class="select-input" id="user-role"><option>student</option><option>contributor</option><option>admin</option></select></div>
+    <div class="form-group"><label class="form-label">Password *</label><input class="form-input" id="user-pass" type="password" /></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-user')">Cancel</button><button class="btn btn-primary" onclick="submitUser()">Add User</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-add-lecturer" onclick="closeModal(event,'modal-add-lecturer')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">Add Lecturer</span><button class="modal-close" onclick="closeModal(null,'modal-add-lecturer')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Full Name *</label><input class="form-input" id="lec-name" placeholder="e.g. Dr. Jane Doe" /></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="lec-email" type="email" /></div>
+    <div class="form-group"><label class="form-label">Department</label><select class="select-input" id="lec-dept"><option>Computer Science</option><option>Information Technology</option><option>Cybersecurity</option><option>Software Engineering</option></select></div>
+    <div class="form-group"><label class="form-label">Position</label><input class="form-input" id="lec-position" placeholder="e.g. Senior Lecturer" /></div>
+    <div class="form-group"><label class="form-label">Office</label><input class="form-input" id="lec-office" placeholder="e.g. Block A, Room 102" /></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(null,'modal-add-lecturer')">Cancel</button><button class="btn btn-primary" onclick="submitLecturer()">Add Lecturer</button></div>
+  </div>
+</div>
+
+<!-- VERIFICATION REVIEW MODAL -->
+<div class="modal-overlay" id="modal-review-verif" onclick="closeModal(event,'modal-review-verif')">
+  <div class="modal" style="max-width:500px;" onclick="event.stopPropagation()">
+    <div class="modal-header"><span class="modal-title">Review Verification Request</span><button class="modal-close" onclick="closeModal(null,'modal-review-verif')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="review-verif-id" />
+      <div style="background:var(--bg);border-radius:8px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.8;" id="review-verif-info"></div>
+      <div id="review-id-card-wrap" style="margin-bottom:14px;display:none;">
+        <label class="form-label">Submitted ID Card</label>
+        <img id="review-id-card-img" src="" alt="ID Card" style="width:100%;max-height:260px;object-fit:contain;border:1px solid var(--border);border-radius:8px;background:#f9f9f7;margin-top:6px;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Admin Note <span style="font-weight:400;color:var(--muted)">(optional — required when rejecting)</span></label>
+        <textarea id="review-note" class="form-input" rows="2" placeholder="Reason for rejection, or approval note…" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal(null,'modal-review-verif')">Cancel</button>
+      <button class="btn" style="background:#dc3545;color:#fff;border:none;" onclick="submitReview('rejected')">✕ Reject</button>
+      <button class="btn btn-primary" onclick="submitReview('approved')">✓ Approve</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin-login-modal">
+  <div class="login-card">
+    <div class="login-logo">F</div>
+    <h2>FOCOSA Admin</h2>
+    <p class="sub">Sign in to manage content</p>
+    <div class="field">
+      <label for="admin-login-email">Email</label>
+      <input id="admin-login-email" type="email" placeholder="admin@focosa.edu" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="admin-login-pass">Password</label>
+      <input id="admin-login-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()" />
+    </div>
+    <button class="btn btn-primary login-btn" onclick="adminLogin()">Sign in</button>
+    <div class="hint">Authorized administrators only</div>
+  </div>
+</div>
+<style>
+  /* Full-screen opaque login gate — completely covers the admin app until authenticated */
+  #admin-login-modal{display:none;position:fixed;inset:0;width:100vw;height:100vh;background:linear-gradient(135deg,#0f1a14 0%,#1a7a45 100%);z-index:9999;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+  #admin-login-modal.open{display:flex}
+  body.login-locked{overflow:hidden}
+  body.login-locked .sidebar,body.login-locked .main-content,body.login-locked .topbar,body.login-locked .sidebar-backdrop{visibility:hidden}
+  #admin-login-modal .login-card{background:#fff;border-radius:14px;padding:32px 28px;width:400px;max-width:100%;box-shadow:0 24px 70px rgba(0,0,0,0.35);animation:loginIn .25s ease}
+  #admin-login-modal .login-logo{width:52px;height:52px;border-radius:12px;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;margin:0 auto 14px}
+  #admin-login-modal h2{text-align:center;margin-bottom:4px;font-size:20px;font-weight:700;color:var(--text)}
+  #admin-login-modal p.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:20px}
+  #admin-login-modal .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+  #admin-login-modal label{font-size:12px;font-weight:600;color:var(--text)}
+  #admin-login-modal input{padding:11px 13px;border:1px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;outline:none;transition:border-color .15s,box-shadow .15s;width:100%;box-sizing:border-box}
+  #admin-login-modal input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,122,69,.12)}
+  #admin-login-modal .login-btn{width:100%;justify-content:center;margin-top:6px;padding:11px}
+  #admin-login-modal .hint{margin-top:14px;text-align:center;font-size:11px;color:var(--muted)}
+  @keyframes loginIn{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+
+  /* Mobile responsive */
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:90}
+  .sidebar-backdrop.open{display:block}
+  @media(max-width:768px){
+    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:100;width:240px;transform:translateX(-100%);transition:transform .25s ease}
+    .sidebar.mobile-open{transform:translateX(0)}
+    .sidebar.collapsed{width:240px;transform:translateX(-100%)}
+    .main-wrapper{width:100%}
+    .topbar{padding:0 14px}
+    .main-content{padding:14px}
+    .page-title{font-size:13px}
+    .page-subtitle{display:none}
+    .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .stat-card{padding:14px}
+    .stat-value{font-size:20px}
+    .topbar-right .icon-btn:nth-child(1){display:none}
+    table{font-size:12px}
+    th,td{padding:8px 10px}
+  }
+  @media(max-width:480px){
+    .stats-grid{grid-template-columns:1fr}
+  }
+</style>
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+const API = (document.querySelector('meta[name="api-base"]')?.content) || 'https://focosa.onrender.com/api';
+const pageMeta = {
+  dashboard:     { title:'Dashboard',     subtitle:'Overview of FOCOSA Hub' },
+  announcements: { title:'Announcements', subtitle:'Manage announcements' },
+  events:        { title:'Events',        subtitle:'Manage events' },
+  resources:     { title:'Resources',     subtitle:'Manage academic resources' },
+  departments:   { title:'Departments',   subtitle:'Manage departments' },
+  marketplace:   { title:'Marketplace',   subtitle:'Moderate marketplace listings' },
+  users:         { title:'Users',         subtitle:'Manage user accounts' },
+  lecturers:     { title:'Lecturers',     subtitle:'Manage lecturers' },
+  settings:      { title:'Settings',      subtitle:'Admin panel settings' },
+};
+
+function navigate(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if (el) el.classList.add('active');
+  const m = pageMeta[page]||{};
+  document.getElementById('topbar-title').textContent = m.title||page;
+  document.getElementById('topbar-subtitle').textContent = m.subtitle||'';
+  const loaders = { dashboard:loadDashboard, announcements:loadAnnouncements, events:loadEvents, resources:loadResources, departments:loadDepartments, marketplace:loadMarketplace, verifications:loadVerifications, users:loadUsers, lecturers:loadLecturers };
+  if (loaders[page]) loaders[page]();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebar-backdrop');
+  if (window.innerWidth <= 768) {
+    sb.classList.toggle('mobile-open');
+    if (bd) bd.classList.toggle('open', sb.classList.contains('mobile-open'));
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+}
+// Close sidebar on mobile when nav item clicked
+document.addEventListener('click', (e) => {
+  const item = e.target.closest('.nav-item');
+  if (item && window.innerWidth <= 768) {
+    document.getElementById('sidebar')?.classList.remove('mobile-open');
+    document.getElementById('sidebar-backdrop')?.classList.remove('open');
+  }
+});
+
+async function api(path, opts={}) {
+  const headers = {'Content-Type':'application/json', ...(opts.headers||{})};
+  const tok = localStorage.getItem('focosa_admin_token');
+  if (tok) headers['Authorization'] = 'Bearer ' + tok;
+  const res = await fetch(API+path, { ...opts, headers });
+  if (res.status === 401) {
+    localStorage.removeItem('focosa_admin_token');
+    showLogin();
+    throw new Error('Unauthorized — please log in');
+  }
+  if (!res.ok) {
+    let msg='Request failed';
+    try { const j=await res.json(); msg=j.message||j.error||JSON.stringify(j); } catch{ try{msg=await res.text();}catch{} }
+    throw new Error(msg);
+  }
+  if (res.status===204) return null;
+  return res.json();
+}
+
+function showLogin(){ const m=document.getElementById('admin-login-modal'); if(m){ m.classList.add('open'); document.body.classList.add('login-locked'); setTimeout(()=>document.getElementById('admin-login-email')?.focus(),50);} }
+function hideLogin(){ const m=document.getElementById('admin-login-modal'); if(m){ m.classList.remove('open'); document.body.classList.remove('login-locked'); } }
+async function adminLogin(){
+  const email=document.getElementById('admin-login-email').value.trim();
+  const password=document.getElementById('admin-login-pass').value;
+  if(!email||!password){showToast('Email and password required','error');return;}
+  try{
+    const res=await fetch(API+'/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    if(!res.ok){let m='Login failed';try{const j=await res.json();m=j.message||m;}catch{} throw new Error(m);}
+    const data=await res.json();
+    const payload = data.data || data;
+    const token = payload.accessToken || payload.access_token || payload.token;
+    if(!token) throw new Error('No token in response');
+    const user = payload.user || {};
+    const role = (user.role || payload.role || '').toString().toUpperCase();
+    if (role !== 'ADMIN') {
+      throw new Error('Access denied — this account is not an administrator (role: '+(role||'unknown')+')');
+    }
+    localStorage.setItem('focosa_admin_token', token);
+    localStorage.setItem('focosa_admin_user', JSON.stringify(user));
+    if (payload.refreshToken || payload.refresh_token) localStorage.setItem('focosa_admin_refresh', payload.refreshToken||payload.refresh_token);
+    hideLogin(); showToast('Welcome, '+(user.name||user.email||'Admin'),'success'); checkApi(); loadDashboard();
+  }catch(e){ showToast(e.message||'Login failed','error'); }
+}
+async function adminLogout(){
+  try{ await fetch(API+'/auth/logout',{method:'POST',headers:{'Authorization':'Bearer '+(localStorage.getItem('focosa_admin_token')||'')}}); }catch{}
+  localStorage.removeItem('focosa_admin_token'); localStorage.removeItem('focosa_admin_refresh');
+  showLogin(); showToast('Logged out','success');
+}
+
+async function checkApi() {
+  try {
+    await api('/health');
+    document.getElementById('api-status').className='api-status connected';
+    document.getElementById('api-status-text').textContent='API Connected';
+  } catch {
+    document.getElementById('api-status').className='api-status';
+    document.getElementById('api-status-text').textContent='API Disconnected';
+  }
+}
+
+// ---- DASHBOARD ----
+async function loadDashboard() {
+  try {
+    const [news,events,depts,arch,contribs] = await Promise.all([
+      api('/news?limit=1').catch(()=>({total:0,pagination:{total:0}})),
+      api('/events?limit=1').catch(()=>({total:0,pagination:{total:0}})),
+      api('/departments').catch(()=>([])),
+      api('/archive?limit=1').catch(()=>({total:0,pagination:{total:0}})),
+      api('/contributors').catch(()=>([])),
+    ]);
+    const num = (x, fb) => x?.total ?? x?.pagination?.total ?? (Array.isArray(x)?x.length:fb);
+    const s = { users: num(contribs,'—'), resources: num(arch,'—'), events: num(events,'—'), announcements: num(news,'—'), listings: num(arch,'—'), departments: num(depts,'—') };
+    document.getElementById('stat-users').textContent = s.users??'—';
+    document.getElementById('stat-resources').textContent = s.resources??'—';
+    document.getElementById('stat-events').textContent = s.events??'—';
+    document.getElementById('stat-ann').textContent = s.announcements??'—';
+    document.getElementById('stat-listings').textContent = s.listings??'—';
+    document.getElementById('stat-depts').textContent = s.departments??'—';
+    ['users','resources','events','ann','listings','depts'].forEach(k => { const el=document.getElementById('sc-'+k); if(el){el.textContent='Live data';el.className='stat-change';} });
+    // Update pending verifications badge in sidebar
+    const pendingV = s.pending_verifications || 0;
+    const badge = document.getElementById('verif-badge');
+    if (badge) { badge.textContent = pendingV; badge.style.display = pendingV > 0 ? 'inline-block' : 'none'; }
+  } catch {
+    ['users','resources','events','ann','listings','depts'].forEach(k => { const el=document.getElementById('sc-'+k); if(el){el.textContent='Offline';el.className='stat-change neutral';} });
+  }
+  try {
+    const d = await api('/news?limit=3');
+    const items = d.items||d;
+    document.getElementById('dash-announcements').innerHTML = items.slice(0,3).map(a=>`
+      <div class="list-item"><div><div class="list-item-title">${a.title}</div><div class="list-item-sub">${(a.created_at||'').split('T')[0]}</div></div>
+      <span class="badge ${a.type==='Important'?'badge-red':a.type==='Event'?'badge-blue':'badge-gray'}">${a.type||'General'}</span></div>`).join('')||'<div class="loading">No announcements</div>';
+  } catch { document.getElementById('dash-announcements').innerHTML='<div class="loading">Unavailable</div>'; }
+  try {
+    const d = await api('/events?limit=3');
+    const items = d.items||d;
+    document.getElementById('dash-events').innerHTML = items.slice(0,3).map(e=>`
+      <div class="list-item"><div><div class="list-item-title">${e.title}</div><div class="list-item-sub">📍 ${e.location||''}</div></div>
+      <span style="font-size:11px;color:var(--muted);white-space:nowrap">${e.date||''}</span></div>`).join('')||'<div class="loading">No events</div>';
+  } catch { document.getElementById('dash-events').innerHTML='<div class="loading">Unavailable</div>'; }
+  document.getElementById('dash-activity').innerHTML = [
+    {action:'Dashboard loaded',user:'Admin',time:'Just now'},
+    {action:'API health checked',user:'System',time:'Just now'},
+  ].map(i=>`<div class="activity-item"><div class="activity-dot"></div><div class="activity-info"><div class="activity-action">${i.action}</div><div class="activity-user">${i.user}</div></div><span class="activity-time">${i.time}</span></div>`).join('');
+}
+
+// ---- ANNOUNCEMENTS ----
+async function loadAnnouncements() {
+  const tb = document.getElementById('announcements-table');
+  tb.innerHTML = '<tr><td colspan="5" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/news'); const items=d.items||d;
+    tb.innerHTML = items.map(a=>`<tr>
+      <td class="td-bold" style="max-width:260px;overflow:hidden;text-overflow:ellipsis">${a.title}</td>
+      <td><span class="badge badge-outline">${a.type||'General'}</span></td>
+      <td class="td-muted">${(a.created_at||'').split('T')[0]}</td>
+      <td><span class="badge ${a.is_active?'badge-green':'badge-gray'}">${a.is_active?'Active':'Expired'}</span></td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/announcements/${a.id}',loadAnnouncements)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="5" class="loading">No announcements</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="5" class="loading">API offline — run the backend first</td></tr>'; }
+}
+async function submitAnnouncement() {
+  const title=document.getElementById('ann-title').value.trim();
+  const content=document.getElementById('ann-content').value.trim();
+  const type=document.getElementById('ann-type').value;
+  if(!title||!content){showToast('Title and content required','error');return;}
+  try { await api('/news',{method:'POST',body:JSON.stringify({title,content,type,is_active:true})}); closeModal(null,'modal-add-announcement'); document.getElementById('ann-title').value=''; document.getElementById('ann-content').value=''; loadAnnouncements(); showToast('Announcement published!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- EVENTS ----
+async function loadEvents() {
+  const tb = document.getElementById('events-table');
+  tb.innerHTML = '<tr><td colspan="5" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/events'); const items=d.items||d;
+    tb.innerHTML = items.map(e=>`<tr>
+      <td class="td-bold">${e.title}</td>
+      <td class="td-muted">${e.date||''}</td>
+      <td class="td-muted">${e.location||''}</td>
+      <td><span class="badge ${e.status==='upcoming'?'badge-blue':e.status==='completed'?'badge-gray':'badge-yellow'}">${e.status||'upcoming'}</span></td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/events/${e.id}',loadEvents)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="5" class="loading">No events</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="5" class="loading">API offline</td></tr>'; }
+}
+async function submitEvent() {
+  const title=document.getElementById('evt-title').value.trim(), date=document.getElementById('evt-date').value, location=document.getElementById('evt-location').value.trim(), description=document.getElementById('evt-desc').value.trim();
+  if(!title||!date||!location){showToast('Title, date, location required','error');return;}
+  try { await api('/events',{method:'POST',body:JSON.stringify({title,date,location,description,status:'upcoming'})}); closeModal(null,'modal-add-event'); loadEvents(); showToast('Event created!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- RESOURCES ----
+async function loadResources() {
+  const tb = document.getElementById('resources-table');
+  tb.innerHTML = '<tr><td colspan="6" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/archive'); const items=d.items||d;
+    tb.innerHTML = items.map(r=>`<tr>
+      <td class="td-bold">${r.title}</td><td class="td-muted">${r.department||''}</td>
+      <td><span class="badge badge-outline">${r.level||''}</span></td>
+      <td class="td-muted">${r.downloads||0}</td>
+      <td class="td-muted">${(r.created_at||'').split('T')[0]}</td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/resources/${r.id}',loadResources)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="6" class="loading">No resources</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="6" class="loading">API offline</td></tr>'; }
+}
+async function submitResource() {
+  const title=document.getElementById('res-title').value.trim(), department=document.getElementById('res-dept').value, level=document.getElementById('res-level').value, url=document.getElementById('res-url').value.trim();
+  if(!title){showToast('Title required','error');return;}
+  try { await api('/archive',{method:'POST',body:JSON.stringify({title,department,level,url})}); closeModal(null,'modal-add-resource'); document.getElementById('res-title').value=''; document.getElementById('res-url').value=''; loadResources(); showToast('Resource uploaded!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- DEPARTMENTS ----
+async function loadDepartments() {
+  const tb = document.getElementById('departments-table');
+  tb.innerHTML = '<tr><td colspan="6" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/departments'); const items=d.items||d;
+    tb.innerHTML = items.map(d=>`<tr>
+      <td class="td-bold">${d.name}</td><td><span class="badge badge-outline">${d.code||''}</span></td>
+      <td class="td-muted">${d.hod||''}</td><td class="td-muted">${d.student_count||0}</td><td class="td-muted">${d.course_count||0}</td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/departments/${d.id}',loadDepartments)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="6" class="loading">No departments</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="6" class="loading">API offline</td></tr>'; }
+}
+async function submitDepartment() {
+  const name=document.getElementById('dept-name').value.trim(), code=document.getElementById('dept-code').value.trim(), hod=document.getElementById('dept-hod').value.trim(), description=document.getElementById('dept-desc').value.trim();
+  if(!name||!code){showToast('Name and code required','error');return;}
+  try { await api('/departments',{method:'POST',body:JSON.stringify({name,code,hod,description})}); closeModal(null,'modal-add-dept'); document.getElementById('dept-name').value=''; document.getElementById('dept-code').value=''; document.getElementById('dept-hod').value=''; loadDepartments(); showToast('Department added!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- MARKETPLACE ----
+async function loadMarketplace() {
+  const tb = document.getElementById('marketplace-table');
+  tb.innerHTML = '<tr><td colspan="7" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/archive'); const items=d.items||d;
+    tb.innerHTML = items.map(l=>`<tr>
+      <td class="td-bold">${l.title}</td><td class="td-muted">${l.seller_name||l.contact||''}</td>
+      <td>₦${Number(l.price).toLocaleString()}</td><td class="td-muted">${l.category||''}</td>
+      <td class="td-muted">${(l.created_at||'').split('T')[0]}</td>
+      <td><span class="badge ${l.status==='approved'?'badge-green':l.status==='pending'?'badge-yellow':'badge-red'}">${l.status}</span></td>
+      <td class="td-actions"><div>
+        ${l.status==='pending'?`<button class="btn btn-ghost-green btn-icon btn-sm" onclick="patchListing(${l.id},'approve')" title="Approve"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>
+        <button class="btn btn-ghost-red btn-icon btn-sm" onclick="patchListing(${l.id},'reject')" title="Reject"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`:''}
+        <button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/listings/${l.id}',loadMarketplace)">${trashIcon()}</button>
+      </div></td>
+    </tr>`).join('')||'<tr><td colspan="7" class="loading">No listings</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="7" class="loading">API offline</td></tr>'; }
+}
+async function patchListing(id, action) {
+  try { await api(`/archive/${id}/${action}`,{method:'PATCH'}); loadMarketplace(); showToast(`Listing ${action}d!`,'success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- USERS ----
+async function loadUsers() {
+  const tb = document.getElementById('users-table');
+  tb.innerHTML = '<tr><td colspan="7" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/contributors'); const items=d.items||d;
+    tb.innerHTML = items.map(u=>`<tr>
+      <td class="td-bold">${u.full_name}</td><td class="td-muted">${u.email}</td>
+      <td class="td-muted">${u.department||''}</td><td class="td-muted">${u.level||''}</td>
+      <td><span class="badge ${u.role==='admin'?'badge-red':u.role==='contributor'?'badge-blue':'badge-gray'}">${u.role}</span></td>
+      <td class="td-muted">${(u.created_at||'').split('T')[0]}</td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/users/${u.id}',loadUsers)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="7" class="loading">No users</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="7" class="loading">API offline</td></tr>'; }
+}
+async function submitUser() {
+  const full_name=document.getElementById('user-name').value.trim(), email=document.getElementById('user-email').value.trim(), matric_number=document.getElementById('user-matric').value.trim(), department=document.getElementById('user-dept').value, level=document.getElementById('user-level').value, role=document.getElementById('user-role').value, password=document.getElementById('user-pass').value;
+  if(!full_name||!email||!password){showToast('Name, email, password required','error');return;}
+  try { await api('/contributors',{method:'POST',body:JSON.stringify({full_name,email,matric_number,department,level,role,password})}); closeModal(null,'modal-add-user'); loadUsers(); showToast('User added!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- LECTURERS ----
+async function loadLecturers() {
+  const tb = document.getElementById('lecturers-table');
+  tb.innerHTML = '<tr><td colspan="6" class="loading">Loading…</td></tr>';
+  try {
+    const d = await api('/contributors'); const items=d.items||d;
+    tb.innerHTML = items.map(l=>`<tr>
+      <td class="td-bold">${l.name}</td><td class="td-muted">${l.department||''}</td>
+      <td class="td-muted">${l.email||''}</td><td class="td-muted">${l.position||''}</td><td class="td-muted">${l.office||''}</td>
+      <td class="td-actions"><div><button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/lecturers/${l.id}',loadLecturers)">${trashIcon()}</button></div></td>
+    </tr>`).join('')||'<tr><td colspan="6" class="loading">No lecturers</td></tr>';
+  } catch { tb.innerHTML='<tr><td colspan="6" class="loading">API offline</td></tr>'; }
+}
+async function submitLecturer() {
+  const name=document.getElementById('lec-name').value.trim(), email=document.getElementById('lec-email').value.trim(), department=document.getElementById('lec-dept').value, position=document.getElementById('lec-position').value.trim(), office=document.getElementById('lec-office').value.trim();
+  if(!name){showToast('Name required','error');return;}
+  try { await api('/contributors',{method:'POST',body:JSON.stringify({name,email,department,position,office})}); closeModal(null,'modal-add-lecturer'); document.getElementById('lec-name').value=''; document.getElementById('lec-email').value=''; loadLecturers(); showToast('Lecturer added!','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+// ---- SHARED ----
+async function del(path, reloadFn) {
+  if(!confirm('Delete this item?')) return;
+  try { await api(path,{method:'DELETE'}); reloadFn(); showToast('Deleted','success'); }
+  catch(e){showToast('Error: '+e.message,'error');}
+}
+
+function trashIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>`;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(e, id) { if(!e||e.target===document.getElementById(id)) document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg, type='success') {
+  const c=document.getElementById('toast-container');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+  c.appendChild(t); setTimeout(()=>t.remove(),3000);
+}
+
+// ---- VERIFICATIONS ----
+async function loadVerifications() {
+  const tb = document.getElementById('verifications-table');
+  if (!tb) return;
+  tb.innerHTML = '<tr><td colspan="9" class="loading">Loading…</td></tr>';
+  const filterVal = document.getElementById('verif-filter')?.value || 'pending';
+  const qs = filterVal ? `?status=${filterVal}` : '';
+  try {
+    const items = await api(`/activity/recent${qs}`);
+    if (!items.length) {
+      tb.innerHTML = `<tr><td colspan="9" class="loading">No ${filterVal || ''} verification requests</td></tr>`;
+      return;
+    }
+    tb.innerHTML = items.map(v => {
+      const statusBadge = v.status === 'approved'
+        ? '<span class="badge badge-green">Approved</span>'
+        : v.status === 'rejected'
+        ? '<span class="badge badge-red">Rejected</span>'
+        : '<span class="badge badge-yellow">Pending</span>';
+      const hasCard = v.id_card_url ? true : false;
+      const cardPreview = hasCard
+        ? `<img src="${v.id_card_url}" style="height:36px;width:56px;object-fit:cover;border-radius:4px;border:1px solid var(--border);cursor:pointer;" onclick="openReview(${v.id})" title="Click to review" />`
+        : `<span class="td-muted" style="font-size:11px;">Not uploaded</span>`;
+      return `<tr>
+        <td class="td-bold">${v.full_name}</td>
+        <td class="td-muted">${v.email||''}</td>
+        <td class="td-muted">${v.matric_number}</td>
+        <td class="td-muted">${v.department||''}</td>
+        <td class="td-muted">${v.level||''}</td>
+        <td>${cardPreview}</td>
+        <td class="td-muted">${(v.submitted_at||'').split('T')[0]}</td>
+        <td>${statusBadge}</td>
+        <td class="td-actions"><div>
+          ${v.status==='pending'?`<button class="btn btn-primary btn-sm" onclick="openReview(${v.id},${JSON.stringify(v).replace(/"/g,'&quot;')})">Review</button>`:''}
+          <button class="btn btn-ghost-red btn-icon btn-sm" onclick="del('/verification/requests/${v.id}',loadVerifications)">${trashIcon()}</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+  } catch(e) { tb.innerHTML = '<tr><td colspan="9" class="loading">API offline</td></tr>'; }
+}
+
+function openReview(id, data) {
+  document.getElementById('review-verif-id').value = id;
+  document.getElementById('review-note').value = '';
+  if (data) {
+    document.getElementById('review-verif-info').innerHTML = `
+      <strong>${data.full_name}</strong> &nbsp;·&nbsp; ${data.email||''}
+      <br>Matric: <strong>${data.matric_number}</strong> &nbsp;·&nbsp; ${data.department||''} &nbsp;·&nbsp; ${data.level||''}
+      <br><span style="color:var(--muted);font-size:12px;">Submitted: ${(data.submitted_at||'').split('T')[0]}</span>
+    `;
+    const wrap = document.getElementById('review-id-card-wrap');
+    const img  = document.getElementById('review-id-card-img');
+    if (data.id_card_url) {
+      img.src = data.id_card_url;
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
+  openModal('modal-review-verif');
+}
+
+async function submitReview(status) {
+  const id   = document.getElementById('review-verif-id').value;
+  const note = document.getElementById('review-note').value.trim();
+  if (status === 'rejected' && !note) { showToast('Please provide a rejection reason','error'); return; }
+  try {
+    await api(`/activity/recent/${id}/review`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, admin_note: note })
+    });
+    closeModal(null, 'modal-review-verif');
+    loadVerifications();
+    showToast(`Request ${status}!`, status === 'approved' ? 'success' : 'error');
+  } catch(e) { showToast('Error: '+e.message,'error'); }
+}
+
+// Update dashboard badge for pending verifications
+const _origLoadDash = loadDashboard;
+
+if (!localStorage.getItem('focosa_admin_token')) {
+  showLogin();
+} else {
+  loadDashboard();
+}
+checkApi();
+setInterval(checkApi, 15000);
+</script>
+</body>
+</html>
