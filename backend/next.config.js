@@ -4,7 +4,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  generateBuildId: async () => 'build',
 }
 
 module.exports = nextConfig
