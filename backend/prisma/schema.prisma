@@ -1,0 +1,125 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  fullName        String
+  email           String   @unique
+  password        String
+  matricNumber    String?
+  department      String?
+  level           String?
+  role            String   @default("student")
+  isVerified      Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  resources               Resource[]
+  verificationRequests    VerificationRequest[]
+  listings                Listing[]
+
+  @@map("users")
+}
+
+model Department {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  code          String   @unique
+  hod           String?
+  description   String?
+  studentCount  Int      @default(0)
+  courseCount   Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  @@map("departments")
+}
+
+model Lecturer {
+  id          Int      @id @default(autoincrement())
+  name        String
+  email       String?
+  department  String?
+  position    String?
+  office      String?
+  createdAt   DateTime @default(now())
+
+  @@map("lecturers")
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  date        String?
+  location    String?
+  status      String   @default("upcoming")
+  createdAt   DateTime @default(now())
+
+  @@map("events")
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  type      String   @default("General")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("announcements")
+}
+
+model Resource {
+  id          Int      @id @default(autoincrement())
+  title       String
+  department  String?
+  level       String?
+  url         String?
+  downloads   Int      @default(0)
+  uploadedBy  Int?
+  uploader    User?    @relation(fields: [uploadedBy], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@map("resources")
+}
+
+model VerificationRequest {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName      String
+  matricNumber  String
+  department    String?
+  level         String?
+  idCardUrl     String?
+  status        String   @default("pending")
+  adminNote     String?
+  submittedAt   DateTime @default(now())
+  reviewedAt    DateTime?
+
+  @@map("verification_requests")
+}
+
+model Listing {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  price       Float
+  category    String?
+  contact     String?
+  sellerId    Int
+  seller      User     @relation(fields: [sellerId], references: [id])
+  sellerName  String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+
+  @@map("listings")
+}
